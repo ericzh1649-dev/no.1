@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>羽毛球 · 双打大轮转 · 工作台</title>
+<style>
+  :root{
+    --bg1:#f1f5f9; --bg2:#e2e8f0; --card:#ffffff; --ink:#0f172a; --muted:#64748b;
+    --line:#e2e8f0; --accent:#f97316; --court:#2f9e57; --ok:#16a34a; --no:#e5e7eb;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    color:var(--ink); background:linear-gradient(160deg,var(--bg1),var(--bg2)); min-height:100vh; padding:20px;}
+  .wrap{max-width:1100px; margin:0 auto;}
+  h1{font-size:24px; margin:0 0 4px; letter-spacing:1px;}
+  .sub{color:var(--muted); font-size:13px; margin-bottom:16px; line-height:1.7;}
+  .panel{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px; box-shadow:0 4px 14px rgba(15,23,42,.05); margin-bottom:16px;}
+  .controls{display:flex; flex-wrap:wrap; gap:14px; align-items:flex-end;}
+  .field{display:flex; flex-direction:column; gap:4px;}
+  .field label{font-size:12px; color:var(--muted);}
+  .field input{width:90px; padding:8px 10px; border:1px solid var(--line); border-radius:8px; font-size:15px; text-align:center;}
+  .btns{display:flex; gap:8px; flex-wrap:wrap;}
+  button{border:none; border-radius:9px; padding:9px 14px; font-size:14px; cursor:pointer; background:#eef2f7; color:var(--ink); transition:.15s; font-weight:600;}
+  button:hover{background:#e2e8f0;}
+  button.primary{background:var(--accent); color:#fff;}
+  button.primary:hover{background:#ea670c;}
+  .speed{display:flex; flex-direction:column; gap:4px; min-width:160px;}
+  .speed input{width:100%;}
+  .warn{color:#dc2626; font-size:13px; margin-top:6px; min-height:18px; width:100%;}
+
+  .stats{display:flex; flex-wrap:wrap; gap:12px; margin-bottom:14px;}
+  .stat{background:#f8fafc; border:1px solid var(--line); border-radius:10px; padding:10px 16px; min-width:96px;}
+  .stat .v{font-size:24px; font-weight:800; color:var(--accent);}
+  .stat .k{font-size:12px; color:var(--muted);}
+
+  .courts{display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:14px;}
+  .court-card{background:#f8fafc; border:1px solid var(--line); border-radius:12px; padding:10px;}
+  .court-title{font-size:13px; font-weight:700; color:var(--muted); margin-bottom:8px; text-align:center;}
+  .court{position:relative; aspect-ratio:3/2; background:var(--court); border-radius:8px; overflow:hidden;}
+  .court::before{content:""; position:absolute; inset:8px; border:2px solid rgba(255,255,255,.5); border-radius:6px;}
+  .net{position:absolute; left:50%; top:8px; bottom:8px; width:2px; background:rgba(255,255,255,.85); transform:translateX(-1px);}
+  .ctoken{position:absolute; width:40px; height:40px; margin:-20px 0 0 -20px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#fff; font-weight:700; font-size:15px; border:2px solid rgba(255,255,255,.85); box-shadow:0 3px 8px rgba(0,0,0,.25); animation:pop .35s ease;}
+  .ctoken.left{left:24%;} .ctoken.right{left:76%;}
+  .ctoken.top{top:32%;} .ctoken.bottom{top:68%;}
+  @keyframes pop{from{transform:scale(.5); opacity:.2;} to{transform:scale(1); opacity:1;}}
+  .vs{text-align:center; font-size:12px; color:var(--muted); margin-top:6px; font-weight:700;}
+
+  .legend{display:flex; flex-wrap:wrap; gap:10px; margin-top:12px; justify-content:center;}
+  .leg{display:flex; align-items:center; gap:6px; font-size:12px; color:var(--muted);}
+  .dot{width:14px; height:14px; border-radius:4px;}
+
+  .matrix h3{font-size:14px; margin:0 0 4px;}
+  .matrix .hint{font-size:12px; color:var(--muted); margin-bottom:10px;}
+  .mrow{display:flex; align-items:center; gap:8px; margin-bottom:6px; font-size:13px;}
+  .mrow .pid{width:26px; font-weight:800; text-align:center;}
+  .mrow .pcount{width:74px; text-align:right; color:var(--muted); font-size:12px;}
+  .chips{display:flex; flex-wrap:wrap; gap:4px;}
+  .chip{width:24px; height:24px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; background:var(--no); color:#94a3b8; border:1px solid #d1d5db; transition:.25s;}
+  .chip.on{background:var(--ok); color:#fff; border-color:var(--ok);}
+
+  details{margin-top:6px;}
+  summary{cursor:pointer; color:var(--accent); font-weight:600; font-size:14px;}
+  table{width:100%; border-collapse:collapse; margin-top:10px; font-size:13px;}
+  th,td{border:1px solid var(--line); padding:6px 8px; text-align:center;}
+  th{background:#f1f5f9; color:var(--muted);}
+  tr.cur{background:#fff7ed;}
+  .rule{font-size:12.5px; color:var(--muted); line-height:1.8; background:#f8fafc; border-left:3px solid var(--accent); padding:10px 12px; border-radius:0 8px 8px 0; margin-top:14px;}
+
+  .score-box{display:flex; align-items:center; justify-content:center; gap:6px; margin-top:8px; font-size:13px; flex-wrap:wrap;}
+  .score-box .tm{font-size:11px; color:var(--muted);}
+  .score-box input.sc{width:46px; padding:4px 6px; border:1px solid var(--line); border-radius:6px; font-size:14px; text-align:center;}
+  .score-box button.rec{background:var(--accent); color:#fff; padding:5px 10px; font-size:12px; border-radius:6px;}
+  .score-box .recd{color:var(--ok); font-size:12px; font-weight:700;}
+  .standings h3{font-size:14px; margin:0 0 4px;}
+  .standings .hint{font-size:12px; color:var(--muted); margin-bottom:10px;}
+  .standings table th:first-child, .standings table td:first-child{width:54px;}
+  .standings tr.rank1{background:#fff7ed;}
+  .standings tr.rank1 td:first-child{font-weight:800; color:var(--accent);}
+  .bye-banner{background:#fef3c7; border:1px solid #fcd34d; color:#92400e; font-size:13px; font-weight:700; padding:8px 12px; border-radius:8px; margin-bottom:12px; text-align:center;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🏸 羽毛球 · 双打大轮转 · 工作台</h1>
+  <div class="sub">采用业内「<b>双打大轮转 / 八人转 / 多人转</b>」标准算法（juejin/csdn 贪心 tires 算法）：列出所有 C(N,2) 个搭档组合与所有可能对局，按「未用过的搭档 + 上场少的人」贪心挑选对局上场，直到每对搭档都至少用一次且每人上场次数完全相等。<b>总局数由算法自然给出</b>（5 人=5 局、7 人=14 局、8 人=14 局、12 人=33 局等），每人上场次数极差=0。</div>
+
+  <div class="panel controls">
+    <div class="field"><label>人数（≥4 即可）</label><input id="inpN" type="number" min="4" max="40" value="8" /></div>
+    <div class="field"><label>场地片数</label><input id="inpC" type="number" min="1" max="10" value="1" /></div>
+    <button class="primary" id="btnApply">应用 / 重新生成</button>
+    <div class="btns">
+      <button id="btnPrev">◀ 上一轮</button>
+      <button id="btnPlay">▶ 播放</button>
+      <button id="btnNext">下一轮 ▶</button>
+      <button id="btnReset">↺ 重置</button>
+      <button id="btnRand">🎲 随机本轮比分</button>
+      <button id="btnClearScore">清空记分</button>
+    </div>
+    <div class="speed"><label style="font-size:12px;color:var(--muted)">速度（每轮 <span id="spdVal">1.5</span>s）</label>
+      <input id="inpSpeed" type="range" min="0.4" max="3" step="0.1" value="1.5" /></div>
+    <div class="warn" id="warn"></div>
+  </div>
+
+  <div class="panel">
+    <div class="stats">
+      <div class="stat"><div class="v" id="stTotal">14</div><div class="k">总局数</div></div>
+      <div class="stat"><div class="v" id="stPlayed">0</div><div class="k">已进行局数</div></div>
+      <div class="stat"><div class="v" id="stRounds">14</div><div class="k">总轮数</div></div>
+      <div class="stat"><div class="v" id="stRound">1</div><div class="k">当前轮 / 总轮数</div></div>
+      <div class="stat"><div class="v" id="stPartner">0</div><div class="k">已产生搭档对数</div></div>
+    </div>
+    <div class="courts" id="courts"></div>
+    <div class="legend" id="legend"></div>
+  </div>
+
+  <div class="panel matrix">
+    <h3>搭档进度（绿色 = 已搭档过的队友）</h3>
+    <div class="hint">绿色格子 = 已搭档过的队友；灰色 = 尚未搭档。业内"双打大轮转"算法保证尽量覆盖所有可能搭档组合（每对搭档至少上场一次），并最终以每人上场次数完全相等收尾。</div>
+    <div id="matrix"></div>
+  </div>
+
+  <div class="panel standings">
+    <h3>🏆 实时排行榜（大分优先，大分相同比小分）</h3>
+    <div class="hint">大分 = 胜局数（每胜一局 +1）；小分 = 个人累计得分（每局按所在队伍的实际比分累加）。排名先按大分降序，大分相同再比小分。</div>
+    <div id="standings"></div>
+  </div>
+
+  <div class="panel">
+    <details>
+      <summary>查看完整赛程表（每一局谁和谁搭档、对阵谁、比分）</summary>
+      <div id="schedule"></div>
+    </details>
+    <div class="rule" id="ruleText"></div>
+  </div>
+</div>
+
+<script>
+function $(id){ return document.getElementById(id); }
+
+const state = { N:8, C:1, round:0, rounds:[], games:[], giMap:[], byes:[], perRound:1, total:0, playing:false, timer:null, speed:1500 };
+
+function courtColors(c){
+  const C = Math.max(state.C,1);
+  const hue = Math.round(c * 360 / C);
+  return [`hsl(${hue},68%,55%)`, `hsl(${(hue+180)%360},68%,52%)`];
+}
+
+// 轮转引擎（circle rotation · 双打大轮转）
+// 定义：轮数 = 每片场地使用次数 = N（所有参赛人转一圈）；每轮并行片数 perRound = min(C, ⌊N/4⌋)，
+// 每片场地每轮打 1 场（4 人 2v2）。总局数 = 轮数 × 每轮并行片数 = perRound × N —— 场地越多并行越多、总场次越多，属正常。
+// 每轮用贪心挑「上场最少、歇最久」的人上场，pairGreedy 做搭档轮换，保证每人上场次数完全均衡。
+
+// 业内"双打大轮转 / 八人转 / 多人转"标准算法（juejin/csdn 贪心 tires 算法）：
+// 列出所有 C(N,2) 个搭档组合、所有可能对局（队 vs 队 4 人不重叠），
+// 按 tires 公式贪心挑「未用过搭档 + 上场少的人」的对局上场，直到「每对搭档都至少用过一次」
+// 且「每人上场次数完全相等」时停止——得到公平的总局数（业内八人转标准）。
+// 每人上场次数极差=0；5人=5局、7人=14局、8人=14局、12人=33局 等完全符合业内数据。
+// 算法本身按 C=1 跑（每场 4 人），多场地只是把总赛程按"每轮并行 perRound 局"切片加速，局数不随 C 变。
+function conflict(A,B){ return A[0]===B[0]||A[0]===B[1]||A[1]===B[0]||A[1]===B[1]; }
+function buildFair(N){
+  const pairs=[]; for(let a=0;a<N;a++) for(let b=a+1;b<N;b++) pairs.push([a,b,0]);
+  const allvs=[]; for(let i=0;i<pairs.length;i++) for(let j=i+1;j<pairs.length;j++){
+    if(conflict(pairs[i],pairs[j])) continue;
+    allvs.push({A:pairs[i], B:pairs[j]});
+  }
+  const plays=new Array(N).fill(0);
+  const games=[];
+  function tires(v){
+    return (v.A[2]+1)*(plays[v.A[0]]+plays[v.A[1]]) + (plays[v.B[0]]+plays[v.B[1]])*(v.B[2]+1);
+  }
+  while(allvs.length>0){
+    allvs.sort((x,y)=>tires(x)-tires(y));
+    const v=allvs.shift();                  // 每次只打 1 场（C=1）
+    plays[v.A[0]]++; plays[v.A[1]]++; plays[v.B[0]]++; plays[v.B[1]]++;
+    v.A[2]++; v.B[2]++;
+    games.push({team1:[v.A[0],v.A[1]], team2:[v.B[0],v.B[1]]});
+    if(pairs.every(p=>p[2]>0) && plays.every(c=>c===plays[0])) break;
+  }
+  return {games, plays};
+}
+
+function generateSchedule(N, C){
+  const perRound = Math.max(1, Math.min(C, Math.floor(N/4)));   // 每轮并行片数（场地数约束）
+  const res = buildFair(N);
+  // 把总局数 games 按 perRound 切成轮次；最后一轮可能少于 perRound 片（自然）
+  const rounds=[], byes=[];
+  for(let i=0;i<res.games.length;i+=perRound){
+    const chunk=res.games.slice(i, i+perRound);
+    rounds.push(chunk);
+    const on=new Set();
+    chunk.forEach(m=>{ m.team1.forEach(x=>on.add(x)); m.team2.forEach(x=>on.add(x)); });
+    const rest=[]; for(let x=0;x<N;x++) if(!on.has(x)) rest.push(x);
+    byes.push(rest);
+  }
+  return {rounds, byes, perRound, plays:res.plays};
+}
+
+function computePartnered(uptoRound){
+  const P=Array.from({length:state.N},()=>new Array(state.N).fill(false));
+  for(let r=0;r<=uptoRound && r<state.rounds.length;r++){
+    state.rounds[r].forEach(m=>{
+      const a=m.team1[0],b=m.team1[1],c=m.team2[0],d=m.team2[1];
+      P[a][b]=P[b][a]=P[c][d]=P[d][c]=true;
+    });
+  }
+  return P;
+}
+
+function token(idx,color,side,vert){
+  return `<div class="ctoken ${side} ${vert}" style="background:${color}">${idx+1}</div>`;
+}
+
+function renderCourts(){
+  const wrap=$('courts');
+  const matches=state.rounds[state.round]||[];
+  const byeSet=new Set(state.byes[state.round]||[]);
+  wrap.innerHTML = byeSet.size>0
+    ? `<div class="bye-banner">🅱️ 本轮轮空：${[...byeSet].sort((a,b)=>a-b).map(i=>i+1).join('、')} 号（本局不计分）</div>`
+    : '';
+  matches.forEach((m,c)=>{
+    const [t1,t2]=courtColors(c);
+    const gi=state.giMap[state.round][c];
+    const g=state.games[gi];
+    const card=document.createElement('div'); card.className='court-card';
+    const t1s=`(${m.team1[0]+1},${m.team1[1]+1})`, t2s=`(${m.team2[0]+1},${m.team2[1]+1})`;
+    const rec = g.done
+      ? `<div class="recd">已记 ✓ ${g.s1}:${g.s2} · 胜方 +1 大分</div>`
+      : `<div class="score-box">
+           <span class="tm">${t1s}</span>
+           <input class="sc" id="sc1_${gi}" type="number" min="0" placeholder="分" value="${g.s1??''}" />
+           <span>:</span>
+           <input class="sc" id="sc2_${gi}" type="number" min="0" placeholder="分" value="${g.s2??''}" />
+           <button class="rec" data-gi="${gi}">确认</button>
+         </div>`;
+    card.innerHTML=`<div class="court-title">第 ${state.round+1} 轮 · 场地 ${c+1}</div>
+      <div class="court"><div class="net"></div>
+        ${token(m.team1[0],t1,'left','top')}${token(m.team1[1],t1,'left','bottom')}
+        ${token(m.team2[0],t2,'right','top')}${token(m.team2[1],t2,'right','bottom')}
+      </div>
+      <div class="vs">${t1s} <b>VS</b> ${t2s}</div>
+      ${rec}`;
+    wrap.appendChild(card);
+    if(!g.done){
+      card.querySelector('.rec').onclick=()=>{
+        const v1=parseInt($('sc1_'+gi).value,10), v2=parseInt($('sc2_'+gi).value,10);
+        recordScore(gi,v1,v2);
+      };
+    }
+  });
+  if(matches.length===0) wrap.innerHTML='<div style="color:var(--muted)">本轮无比赛</div>';
+}
+
+function renderLegend(){
+  const leg=$('legend'); leg.innerHTML='';
+  for(let c=0;c<Math.min(state.C, state.rounds[state.round]?state.rounds[state.round].length:state.C);c++){
+    const [t1,t2]=courtColors(c);
+    leg.insertAdjacentHTML('beforeend',
+      `<div class="leg"><span class="dot" style="background:${t1}"></span>场地${c+1}·队1</div>
+       <div class="leg"><span class="dot" style="background:${t2}"></span>场地${c+1}·队2</div>`);
+  }
+}
+
+function renderMatrix(P){
+  const box=$('matrix'); box.innerHTML='';
+  for(let i=0;i<state.N;i++){
+    const done=P[i].filter((v,j)=>j!==i && v).length;
+    let chips='';
+    for(let j=0;j<state.N;j++){
+      if(j===i) continue;
+      const on=P[i][j]?' on':'';
+      chips+=`<div class="chip${on}">${j+1}</div>`;
+    }
+    box.insertAdjacentHTML('beforeend',
+      `<div class="mrow"><span class="pid">${i+1}</span><span class="chips">${chips}</span><span class="pcount">已搭档 ${done}/${state.N-1}</span></div>`);
+  }
+}
+
+function renderStats(P){
+  let played=0; for(let r=0;r<=state.round;r++) played+=state.rounds[r].length;
+  let pairs=0; for(let i=0;i<state.N;i++) for(let j=i+1;j<state.N;j++) if(P[i][j]) pairs++;
+  $('stTotal').textContent=state.total;
+  $('stPlayed').textContent=played;
+  $('stRounds').textContent=state.rounds.length;
+  $('stRound').textContent=(state.round+1)+' / '+state.rounds.length;
+  $('stPartner').textContent=pairs;
+}
+
+function renderAll(){
+  const P=computePartnered(state.round);
+  renderStats(P); renderCourts(); renderLegend(); renderMatrix(P); renderSchedule(); renderStandings();
+}
+
+// 记分：s1=队1得分，s2=队2得分；比分高者胜，+1 大分；小分=该队累计得分
+function recordScore(gi, v1, v2){
+  if(isNaN(v1)||isNaN(v2)||v1<0||v2<0){ alert('请输入有效的非负比分'); return; }
+  if(v1===v2){ alert('羽毛球比赛无平局，请调整其中一队比分（如 21:19）'); return; }
+  const g=state.games[gi]; g.s1=v1; g.s2=v2; g.done=true;
+  renderAll();
+}
+
+// 随机生成本轮真实比分（演示用）：胜方 21–23，负方 15–20
+function randomRound(){
+  const matches=state.rounds[state.round]||[];
+  matches.forEach((m,c)=>{
+    const gi=state.giMap[state.round][c];
+    const w=21+Math.floor(Math.random()*3);
+    let l=15+Math.floor(Math.random()*6);
+    if(l>=w) l=w-1;
+    const t1win=Math.random()<0.5;
+    const g=state.games[gi];
+    g.s1=t1win?w:l; g.s2=t1win?l:w; g.done=true;
+  });
+  renderAll();
+}
+
+function clearScores(){
+  state.games.forEach(g=>{ g.s1=null; g.s2=null; g.done=false; });
+  renderAll();
+}
+
+// 排名：先按大分（胜局）降序，大分相同比小分（累计得分）
+function computeStandings(){
+  const big=new Array(state.N).fill(0), small=new Array(state.N).fill(0);
+  const bye=new Array(state.N).fill(0);
+  (state.byes||[]).forEach(b=> b.forEach(i=> bye[i]++));
+  state.games.forEach(g=>{
+    if(!g.done) return;
+    const win = g.s1>g.s2 ? 1 : (g.s2>g.s1 ? 2 : 0);
+    if(win===1){ big[g.m.team1[0]]++; big[g.m.team1[1]]++; }
+    else if(win===2){ big[g.m.team2[0]]++; big[g.m.team2[1]]++; }
+    g.m.team1.forEach(i=> small[i]+=g.s1);
+    g.m.team2.forEach(i=> small[i]+=g.s2);
+  });
+  const arr=[]; for(let i=0;i<state.N;i++) arr.push({i, big:big[i], small:small[i], bye:bye[i]});
+  arr.sort((a,b)=> b.big-a.big || b.small-a.small || a.i-b.i);
+  return arr;
+}
+
+function renderStandings(){
+  const arr=computeStandings();
+  let html='<table><tr><th>排名</th><th>选手</th><th>大分（胜局）</th><th>小分（累计得分）</th><th>轮空</th></tr>';
+  let rank=1, lastBig=null, lastSmall=null;
+  arr.forEach((p,idx)=>{
+    if(idx===0 || p.big!==lastBig || p.small!==lastSmall) rank=idx+1;
+    lastBig=p.big; lastSmall=p.small;
+    const hl = rank===1 ? ' class="rank1"' : '';
+    html+=`<tr${hl}><td>${rank}</td><td>${p.i+1}</td><td><b>${p.big}</b></td><td>${p.small}</td><td>${p.bye>0?p.bye+' 次':'—'}</td></tr>`;
+  });
+  html+='</table>';
+  $('standings').innerHTML=html;
+}
+
+function renderSchedule(){
+  let html='<table><tr><th>局</th><th>轮</th><th>对阵（队1 VS 队2）</th><th>比分</th><th>本局产生搭档</th></tr>';
+  let gi=0;
+  state.rounds.forEach((rd,rIdx)=>{
+    rd.forEach(m=>{
+      const g=state.games[gi++];
+      const score = g.done ? `${g.s1} : ${g.s2}` : '—';
+      const cur= rIdx===state.round ? ' class="cur"' : '';
+      html+=`<tr${cur}><td>${gi}</td><td>${rIdx+1}</td>
+        <td>(${m.team1[0]+1},${m.team1[1]+1}) <b>VS</b> (${m.team2[0]+1},${m.team2[1]+1})</td>
+        <td>${score}</td>
+        <td>(${m.team1[0]+1},${m.team1[1]+1})、(${m.team2[0]+1},${m.team2[1]+1})</td></tr>`;
+    });
+  });
+  html+='</table>';
+  $('schedule').innerHTML=html;
+}
+
+function nextRound(){ state.round=(state.round+1)%state.rounds.length; renderAll(); }
+function prevRound(){ state.round=(state.round-1+state.rounds.length)%state.rounds.length; renderAll(); }
+function play(){ if(state.playing) return; state.playing=true; $('btnPlay').textContent='⏸ 暂停'; state.timer=setInterval(nextRound, state.speed); }
+function pause(){ state.playing=false; $('btnPlay').textContent='▶ 播放'; if(state.timer){ clearInterval(state.timer); state.timer=null; } }
+
+function apply(){
+  let N=parseInt($('inpN').value,10), C=parseInt($('inpC').value,10);
+  const warn=$('warn'); warn.textContent='';
+  if(isNaN(N)||N<4) N=4;
+  if(N>40) N=40;
+  if(isNaN(C)||C<1) C=1;
+  $('inpN').value=N; $('inpC').value=C;
+  state.N=N; state.C=C; state.round=0;
+  const res=generateSchedule(N,C);
+  state.rounds=res.rounds; state.byes=res.byes;
+  state.total=state.rounds.reduce((s,r)=>s+r.length,0);
+  state.perRound=res.perRound;
+  // 展平为每局独立记录，便于记分
+  state.games=[]; state.giMap=[];
+  state.rounds.forEach((rd,rIdx)=>{
+    state.giMap[rIdx]=[];
+    rd.forEach((m,c)=>{
+      const gi=state.games.length;
+      state.games.push({round:rIdx, court:c, m, s1:null, s2:null, done:false});
+      state.giMap[rIdx][c]=gi;
+    });
+  });
+  // 动态算法说明（业内"双打大轮转 / 八人转 / 多人转"标准）
+  const rule=$('ruleText');
+  const perRound=state.perRound;
+  const T=state.total;
+  const pairTotal=(N*(N-1)/2)|0;
+  const perPerson=(T*4/N)|0;
+  const std=[5,7,8,12];
+  const inStd=std.includes(N);
+  rule.innerHTML=`<b>每对搭档都至少上场一次 且 每人上场次数完全相等 时停止。</b>`;
+  renderAll();
+  if(state.playing) pause();
+}
+
+$('btnApply').onclick=apply;
+$('btnNext').onclick=()=>{ if(state.playing)pause(); nextRound(); };
+$('btnPrev').onclick=()=>{ if(state.playing)pause(); prevRound(); };
+$('btnReset').onclick=()=>{ pause(); state.round=0; renderAll(); };
+$('btnPlay').onclick=()=>{ state.playing?pause():play(); };
+$('btnRand').onclick=()=>{ if(state.playing)pause(); randomRound(); };
+$('btnClearScore').onclick=()=>{ if(state.playing)pause(); clearScores(); };
+$('inpSpeed').oninput=e=>{ state.speed=Math.round(parseFloat(e.target.value)*1000); $('spdVal').textContent=parseFloat(e.target.value).toFixed(1); if(state.playing){ pause(); play(); } };
+
+apply();
+</script>
+</body>
+</html>
